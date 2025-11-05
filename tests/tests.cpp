@@ -1,50 +1,115 @@
 #include "student_manager.h"
-#include <cassert>
-#include <iostream>
+#include <gtest/gtest.h>
 #include <cmath>
 
-void run_tests() {
+// --- 1. Додавання студента ---
+TEST(StudentManagerTest, AddStudentIncreasesCount) {
     StudentManager sm;
-
     sm.addStudent("Ivan", 19, 85);
-    assert(sm.count() == 1);
+    EXPECT_EQ(sm.count(), 1);
+}
 
-    try { sm.addStudent("Ivan", 20, 90); assert(false); }
-    catch (...) {}
+// --- 2. Додавання дубліката ---
+TEST(StudentManagerTest, AddDuplicateThrows) {
+    StudentManager sm;
+    sm.addStudent("Ivan", 19, 85);
+    EXPECT_THROW(sm.addStudent("Ivan", 20, 90), std::exception);
+}
 
+// --- 3-4. Додавання кількох студентів, пошук кращого та гіршого ---
+TEST(StudentManagerTest, FindBestAndWorstStudent) {
+    StudentManager sm;
+    sm.addStudent("Ivan", 19, 85);
     sm.addStudent("Anna", 18, 95);
     sm.addStudent("Petro", 21, 60);
-    assert(sm.findBestStudent().name == "Anna");
-    assert(sm.findWorstStudent().name == "Petro");
+    EXPECT_EQ(sm.findBestStudent().name, "Anna");
+    EXPECT_EQ(sm.findWorstStudent().name, "Petro");
+}
 
-    double avg = sm.getAverageGrade();
-    assert(std::fabs(avg - (85 + 95 + 60) / 3.0) < 1e-9);
+// --- 5. Середній бал ---
+TEST(StudentManagerTest, AverageGradeIsCorrect) {
+    StudentManager sm;
+    sm.addStudent("Ivan", 19, 85);
+    sm.addStudent("Anna", 18, 95);
+    sm.addStudent("Petro", 21, 60);
+    double expected = (85 + 95 + 60) / 3.0;
+    EXPECT_NEAR(sm.getAverageGrade(), expected, 1e-9);
+}
 
-    assert(sm.getGradeByName("Ivan") == 85);
-    try { sm.getGradeByName("Mark"); assert(false); }
-    catch (...) {}
+// --- 6-7. Отримання оцінки за ім’ям ---
+TEST(StudentManagerTest, GetGradeByNameWorks) {
+    StudentManager sm;
+    sm.addStudent("Ivan", 19, 85);
+    EXPECT_EQ(sm.getGradeByName("Ivan"), 85);
+}
 
-    sm.removeStudent("Petro");
-    assert(sm.count() == 2);
+TEST(StudentManagerTest, GetGradeByNameThrowsForMissing) {
+    StudentManager sm;
+    sm.addStudent("Ivan", 19, 85);
+    EXPECT_THROW(sm.getGradeByName("Mark"), std::exception);
+}
 
-    try { sm.removeStudent("Petro"); assert(false); }
-    catch (...) {}
-    try { sm.addStudent("", 20, 90); assert(false); }
-    catch (...) {}
-    try { sm.addStudent("Oksana", 0, 80); assert(false); }
-    catch (...) {}
-    try { sm.addStudent("Dima", 19, 150); assert(false); }
-    catch (...) {}
+// --- 8-9. Видалення студента ---
+TEST(StudentManagerTest, RemoveStudentDecreasesCount) {
+    StudentManager sm;
+    sm.addStudent("Ivan", 19, 85);
+    sm.addStudent("Anna", 18, 95);
+    sm.removeStudent("Ivan");
+    EXPECT_EQ(sm.count(), 1);
+}
 
+TEST(StudentManagerTest, RemoveMissingStudentThrows) {
+    StudentManager sm;
+    sm.addStudent("Anna", 18, 95);
+    EXPECT_THROW(sm.removeStudent("Petro"), std::exception);
+}
+
+// --- 10-12. Некоректні дані ---
+TEST(StudentManagerTest, AddInvalidNameThrows) {
+    StudentManager sm;
+    EXPECT_THROW(sm.addStudent("", 20, 90), std::exception);
+}
+
+TEST(StudentManagerTest, AddInvalidAgeThrows) {
+    StudentManager sm;
+    EXPECT_THROW(sm.addStudent("Oksana", 0, 80), std::exception);
+}
+
+TEST(StudentManagerTest, AddInvalidGradeThrows) {
+    StudentManager sm;
+    EXPECT_THROW(sm.addStudent("Dima", 19, 150), std::exception);
+}
+
+// --- 13. Очищення ---
+TEST(StudentManagerTest, ClearEmptiesList) {
+    StudentManager sm;
+    sm.addStudent("Ivan", 19, 85);
     sm.clear();
-    assert(sm.count() == 0);
-
-    std::cout << "All 15 tests passed successfully!" << std::endl;
-
+    EXPECT_EQ(sm.count(), 0);
 }
 
-int main() {
-    run_tests();
-    return 0;
+// --- 14. Перевірка підрахунку ---
+TEST(StudentManagerTest, CountReturnsCorrectValue) {
+    StudentManager sm;
+    sm.addStudent("Ivan", 19, 85);
+    sm.addStudent("Anna", 18, 95);
+    EXPECT_EQ(sm.count(), 2);
 }
-//
+
+// --- 15. Перевірка стабільності ---
+TEST(StudentManagerTest, StabilityAfterMultipleOps) {
+    StudentManager sm;
+    sm.addStudent("Ivan", 19, 85);
+    sm.addStudent("Anna", 18, 95);
+    sm.removeStudent("Ivan");
+    sm.addStudent("Petro", 22, 70);
+    EXPECT_EQ(sm.findBestStudent().name, "Anna");
+    EXPECT_NEAR(sm.getAverageGrade(), (95 + 70) / 2.0, 1e-9);
+}
+
+// --- Точка входу ---
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
+/
